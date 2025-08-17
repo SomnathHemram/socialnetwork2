@@ -74,15 +74,45 @@
   </main>
 
   <!-- Bottom Tab Bar -->
-  <nav class="fixed bottom-0 inset-x-0 z-40 bg-black/90 backdrop-blur">
-    <div class="mx-auto safe-w flex justify-between px-8 py-3 text-2xl">
-      <button class="tap">🏠</button>
-      <button class="tap">🔍</button>
-      <button id="fabPost" class="tap">➕</button>
-      <button class="tap">🎬</button>
-      <button class="tap">👤</button>
+<nav class="fixed bottom-0 inset-x-0 z-40 bg-black/90 backdrop-blur">
+  <div class="mx-auto safe-w flex justify-between px-8 py-3 text-2xl">
+    <button id="homeBtn" class="tap">🏠</button>
+    <button id="searchBtn" class="tap">🔍</button>
+    <button id="postBtnNav" class="tap">➕</button>
+    <button id="reelsBtn" class="tap">🎬</button>
+    <button id="profileBtn" class="tap">👤</button>
+  </div>
+</nav>
+
+<!-- Search Modal -->
+<div id="searchModal" class="hidden fixed inset-0 z-50 bg-black/70 flex items-start justify-center pt-20">
+  <div class="w-full max-w-md bg-neutral-900 rounded-lg p-4">
+    <div class="flex gap-2 mb-3">
+      <input id="searchInput" class="flex-1 bg-transparent border border-white/20 rounded px-3 py-2 text-sm placeholder-white/40"
+             placeholder="Search by username or caption">
+      <button id="searchClose" class="px-3 py-1 rounded bg-white text-black">Close</button>
     </div>
-  </nav>
+    <div id="searchResults" class="space-y-3 max-h-72 overflow-auto"></div>
+  </div>
+</div>
+
+<!-- Profile View Modal -->
+<div id="profileModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-start justify-center pt-12">
+  <div class="w-full max-w-3xl bg-neutral-900 rounded-lg p-4">
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <h2 id="profileName" class="text-lg font-semibold"></h2>
+        <p id="profileBio" class="text-sm text-white/60"></p>
+      </div>
+      <div class="flex gap-2">
+        <button id="editProfileOpen" class="px-3 py-1 rounded bg-yellow-500 text-black">Edit</button>
+        <button id="profileClose" class="px-3 py-1 rounded bg-white text-black">Close</button>
+      </div>
+    </div>
+    <div id="profileGrid" class="grid grid-cols-3 gap-2"></div>
+  </div>
+</div>
+
 
   <script type="module" src="app.js"></script>
 </body>

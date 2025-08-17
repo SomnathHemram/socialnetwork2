@@ -7,8 +7,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, serverTimestamp,
-  collection, addDoc, query, orderBy, onSnapshot, limit, deleteDoc
+  collection, addDoc, query, orderBy, onSnapshot, limit,
+  deleteDoc, getDocs, where
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
 
 // --- Firebase config ---
 const firebaseConfig = {
@@ -37,6 +39,28 @@ const postInput = document.getElementById("postInput");
 const imageUrlInput = document.getElementById("imageUrlInput");
 const postBtn = document.getElementById("postBtn");
 const newsFeed = document.getElementById("newsFeed");
+
+// bottom nav + modals
+const homeBtn = document.getElementById("homeBtn");
+const searchBtn = document.getElementById("searchBtn");
+const postBtnNav = document.getElementById("postBtnNav");
+const reelsBtn = document.getElementById("reelsBtn");
+const profileBtn = document.getElementById("profileBtn");
+
+const searchModal = document.getElementById("searchModal");
+const searchInput = document.getElementById("searchInput");
+const searchClose = document.getElementById("searchClose");
+const searchResults = document.getElementById("searchResults");
+
+const profileModalEl = document.getElementById("profileModal");
+const profileName = document.getElementById("profileName");
+const profileBio = document.getElementById("profileBio");
+const profileGrid = document.getElementById("profileGrid");
+const profileClose = document.getElementById("profileClose");
+const editProfileOpen = document.getElementById("editProfileOpen");
+
+// cached posts for client-side search & quick rendering
+let cachedPosts = [];
 
 // --- utils ---
 const show = el => el.classList.remove("hidden");
@@ -122,16 +146,39 @@ postBtn?.addEventListener("click", async () => {
   imageUrlInput.value = "";
 });
 
-// --- feed ---
+function renderFeed(posts) {
+  newsFeed.innerHTML = "";
+  posts.forEach(p => newsFeed.appendChild(renderPostCard(p)));
+}
+
 function startFeed() {
   if (feedUnsub) feedUnsub();
-  const q = query(collection(db, "posts"), orderBy("createdAt","desc"), limit(50));
+  const q = query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(200));
   feedUnsub = onSnapshot(q, (snap) => {
-    newsFeed.innerHTML = "";
-    snap.forEach(docSnap => {
-      const p = { id: docSnap.id, ...docSnap.data() };
-      newsFeed.appendChild(renderPostCard(p));
+    cachedPosts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFeed(cachedPosts);
+  });
+}
+
+function renderSearchResults(results) {
+  searchResults.innerHTML = "";
+  results.slice(0, 100).forEach(p => {
+    const row = document.createElement("div");
+    row.className = "p-2 rounded hover:bg-white/5 flex gap-3 items-center";
+    row.innerHTML = `
+      <img src="${escapeHtml(p.avatar || 'https://via.placeholder.com/40?text=U')}" class="w-8 h-8 rounded-full object-cover">
+      <div class="flex-1">
+        <div class="font-semibold text-sm">${escapeHtml(p.author || 'User')}</div>
+        <div class="text-xs text-white/60">${escapeHtml((p.content || '').slice(0, 80))}</div>
+      </div>
+    `;
+    row.addEventListener("click", () => {
+      // close search and show this single post in feed
+      searchModal.classList.add("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderFeed([p]);
     });
+    searchResults.appendChild(row);
   });
 }
 
@@ -243,8 +290,125 @@ function renderPostCard(p) {
   return el;
 }
 
+
 // --- sign out (right-click avatar) ---
 navAvatar?.addEventListener("contextmenu", async (e) => {
   e.preventDefault();
   if (confirm("Logout?")) await signOut(auth);
+});
+
+
+async function openProfile() {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  // Load user info
+  const uSnap = await getDoc(doc(db, "users", user.uid));
+  const ud = uSnap.data() || {};
+  profileName.textContent = ud.displayName || user.displayName || "You";
+  profileBio.textContent = ud.bio || "";
+
+  // Show profile modal
+  profileGrid.innerHTML = `<div class="col-span-3 py-8 text-center text-white/60">Loading...</div>`;
+  profileModalEl.classList.remove("hidden");
+
+  // Fetch posts by this user
+  const q = query(
+    collection(db, "posts"),
+    where("uid", "==", user.uid),
+    orderBy("createdAt", "desc"),
+    limit(200)
+  );
+  const snap = await getDocs(q);
+
+  // Render posts as grid
+  profileGrid.innerHTML = "";
+  snap.forEach(docSnap => {
+    const p = { id: docSnap.id, ...docSnap.data() };
+    const tile = document.createElement("div");
+    tile.className = "relative pb-[100%] overflow-hidden rounded";
+
+    if (p.imageURL) {
+      tile.innerHTML = `<img src="${escapeHtml(p.imageURL)}" class="absolute inset-0 w-full h-full object-cover" alt="">`;
+    } else {
+      tile.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-white/5 p-2 text-xs text-center">${escapeHtml((p.content||'').slice(0,120))}</div>`;
+    }
+
+    // click = close profile modal + show that post
+    tile.addEventListener("click", () => {
+      profileModalEl.classList.add("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderFeed([p]);
+    });
+
+    profileGrid.appendChild(tile);
+  });
+
+  if (!snap.size) {
+    profileGrid.innerHTML = `<div class="col-span-3 py-8 text-center text-white/60">No posts yet</div>`;
+  }
+}
+
+// --- Bottom Nav Button Handlers ---
+
+// 🏠 Home: scroll to top + show full feed
+homeBtn?.addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  renderFeed(cachedPosts); // re-render full feed
+});
+
+// 🔍 Search: open search modal
+searchBtn?.addEventListener("click", () => {
+  searchInput.value = "";
+  searchResults.innerHTML = "";
+  searchModal.classList.remove("hidden"); // show search modal
+  searchInput.focus();
+});
+
+// Close search modal
+searchClose?.addEventListener("click", () => {
+  searchModal.classList.add("hidden");
+});
+
+// Search as you type (filters cached posts)
+searchInput?.addEventListener("input", (e) => {
+  const term = (e.target.value || "").trim().toLowerCase();
+  if (!term) {
+    searchResults.innerHTML = "";
+    return;
+  }
+  const results = cachedPosts.filter(p =>
+    (p.author || "").toLowerCase().includes(term) ||
+    (p.content || "").toLowerCase().includes(term)
+  );
+  renderSearchResults(results);
+});
+
+// ➕ Post: scroll to composer
+postBtnNav?.addEventListener("click", () => {
+  document.getElementById("postInput")?.focus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// 🎬 Reels (placeholder)
+reelsBtn?.addEventListener("click", () => {
+  alert("🎬 Reels feature coming soon!");
+});
+
+// 👤 Profile: open profile modal
+profileBtn?.addEventListener("click", openProfile);
+
+// Close profile modal
+profileClose?.addEventListener("click", () => {
+  profileModalEl.classList.add("hidden");
+});
+
+// Edit profile (reuse profile editor)
+editProfileOpen?.addEventListener("click", () => {
+  profileModalEl.classList.add("hidden");
+  // If you already have profile editor modal, open it here
+  // Example: document.getElementById("profileEditModal").classList.remove("hidden");
 });
