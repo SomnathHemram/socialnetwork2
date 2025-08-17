@@ -11,104 +11,79 @@
       theme: {
         extend: {
           fontFamily: { sans: ['Poppins','sans-serif'] },
-          colors: {
-            primary: '#2563eb',
-            secondary: '#10b981'
-          }
+          colors: { primary: '#111', accent: '#10b981' }
         }
       }
     }
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    .safe-w { max-width: 640px; }
+    .tap { -webkit-tap-highlight-color: transparent; }
+    .story::-webkit-scrollbar { display: none; }
+    .story { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white font-sans transition-colors duration-300">
+<body class="bg-black text-white font-sans">
 
-  <!-- Navbar -->
-  <nav class="bg-white dark:bg-gray-800 shadow px-6 py-3 sticky top-0 z-40 flex justify-between items-center">
-    <h1 class="text-xl font-bold text-primary">ConnectHub</h1>
-    <div class="flex items-center gap-3">
-      <button id="darkModeToggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
-        🌙
-      </button>
-      <img id="navAvatar" src="https://via.placeholder.com/40?text=U" alt="User" class="w-10 h-10 rounded-full border border-gray-300 object-cover"/>
+  <!-- Top bar -->
+  <header class="sticky top-0 z-40 bg-black/80 backdrop-blur">
+    <div class="mx-auto safe-w flex items-center justify-between px-4 py-3">
+      <div class="flex items-center gap-2">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="" class="w-6 h-6 opacity-90"/>
+        <h1 class="text-xl font-semibold">ConnectHub</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="darkModeToggle" class="tap p-2 rounded hover:bg-white/10" title="Theme">🌙</button>
+        <img id="navAvatar" src="https://via.placeholder.com/40?text=U" class="w-8 h-8 rounded-full object-cover ring-1 ring-white/20" alt="Me">
+      </div>
     </div>
-  </nav>
+    <div class="h-px bg-white/10"></div>
+  </header>
 
   <!-- Auth Modal -->
-  <div id="authModal" class="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-sm animate-fadeIn">
-      <h2 class="text-xl font-semibold mb-4 text-center">Login to ConnectHub</h2>
+  <div id="authModal" class="fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+    <div class="bg-neutral-900 p-6 rounded-2xl shadow w-full max-w-sm">
+      <h2 class="text-lg font-semibold mb-4 text-center">Login to ConnectHub</h2>
       <button id="googleBtn"
-        class="w-full mt-2 bg-primary hover:bg-blue-700 text-white py-2 rounded-lg shadow transition">
+        class="w-full mt-2 bg-white text-black font-medium py-2 rounded-lg hover:bg-gray-200 transition tap">
         Continue with Google
       </button>
-      <p class="text-xs text-center text-gray-500 mt-3">
-        By continuing you agree to our terms and privacy policy.
-      </p>
     </div>
   </div>
 
   <!-- App -->
-  <main id="app" class="hidden p-4 max-w-2xl mx-auto">
-    <!-- Profile Section -->
-    <div class="flex justify-between items-center mb-6 bg-white dark:bg-gray-800 p-4 rounded-xl shadow">
-      <div class="flex items-center gap-3">
-        <img id="userAvatar" src="https://via.placeholder.com/100?text=User"
-             alt="Avatar" class="w-14 h-14 rounded-full object-cover border-2 border-primary"/>
-        <div>
-          <h1 class="text-lg font-bold" id="userName"></h1>
-          <div id="bioDisplay" class="text-sm text-gray-500 dark:text-gray-400 hidden"></div>
+  <main id="app" class="hidden">
+    <div class="mx-auto safe-w">
+
+      <!-- Composer -->
+      <section class="px-4 pt-4">
+        <div class="bg-neutral-900 rounded-2xl p-3">
+          <div class="flex items-center gap-3">
+            <img id="userAvatar" src="https://via.placeholder.com/100?text=U" class="w-10 h-10 rounded-full object-cover ring-1 ring-white/10" alt="">
+            <input id="postInput" placeholder="Write a caption..." class="flex-1 bg-transparent outline-none placeholder-white/40">
+            <button id="postBtn" class="tap text-sm px-3 py-1 rounded bg-white text-black font-semibold">Post</button>
+          </div>
+          <input id="imageUrlInput" type="url" placeholder="Paste image URL (optional)" class="mt-3 w-full bg-transparent border border-white/20 rounded px-3 py-2 text-sm placeholder-white/40">
         </div>
-      </div>
-      <div class="flex gap-2">
-        <button id="editProfileBtn"
-          class="text-sm px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition">Edit</button>
-        <button id="logoutBtn"
-          class="text-sm px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition">Logout</button>
-      </div>
-    </div>
+      </section>
 
-    <!-- Create Post -->
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow mb-6">
-      <textarea id="postInput" placeholder="What's on your mind?"
-        class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 resize-none"></textarea>
-      <button id="postBtn" class="mt-3 w-full bg-secondary hover:bg-green-700 text-white py-2 rounded-lg shadow transition">Post</button>
+      <!-- Feed -->
+      <section id="newsFeed" class="px-0 pt-4 space-y-5"></section>
     </div>
-
-    <!-- News Feed -->
-    <div id="newsFeed" class="space-y-4"></div>
   </main>
 
-  <!-- Profile Modal -->
-  <div id="profileModal" class="hidden fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-sm animate-fadeIn">
-      <h2 class="text-xl font-semibold mb-4 text-center">Edit Profile</h2>
-      <label class="block text-sm mb-1">Avatar (image)</label>
-      <input type="file" id="avatarFile" accept="image/*"
-             class="w-full p-2 mb-3 rounded border dark:bg-gray-700 dark:border-gray-600"/>
-
-      <label class="block text-sm mb-1">Avatar URL (optional)</label>
-      <input type="text" id="avatarInput" placeholder="https://…"
-             class="w-full p-2 mb-3 rounded border dark:bg-gray-700 dark:border-gray-600"/>
-
-      <label class="block text-sm mb-1">Short bio</label>
-      <textarea id="bioInput" placeholder="Tell us about yourself"
-                class="w-full p-2 mb-3 rounded border dark:bg-gray-700 dark:border-gray-600"></textarea>
-
-      <div class="flex gap-2">
-        <button id="saveProfileBtn"
-          class="w-full bg-primary hover:bg-blue-700 text-white py-2 rounded-lg shadow transition">Save</button>
-        <button id="cancelProfileBtn"
-          class="w-full bg-gray-400 hover:bg-gray-500 text-white py-2 rounded-lg transition">Cancel</button>
-      </div>
+  <!-- Bottom Tab Bar -->
+  <nav class="fixed bottom-0 inset-x-0 z-40 bg-black/90 backdrop-blur">
+    <div class="mx-auto safe-w flex justify-between px-8 py-3 text-2xl">
+      <button class="tap">🏠</button>
+      <button class="tap">🔍</button>
+      <button id="fabPost" class="tap">➕</button>
+      <button class="tap">🎬</button>
+      <button class="tap">👤</button>
     </div>
-  </div>
+  </nav>
 
-  <!-- Firebase logic -->
   <script type="module" src="app.js"></script>
-  <style>
-    .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
-    @keyframes fadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
-  </style>
 </body>
 </html>
